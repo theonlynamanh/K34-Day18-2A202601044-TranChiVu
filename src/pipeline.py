@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import os, sys, time
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.m1_chunking import load_documents, chunk_hierarchical
@@ -110,7 +115,9 @@ def evaluate_pipeline(search: HybridSearch, reranker: CrossEncoderReranker):
         print(f"  {'✓' if s >= 0.75 else '✗'} {m}: {s:.4f}")
 
     failures = failure_analysis(results.get("per_question", []))
-    save_report(results, failures)
+    os.makedirs("reports", exist_ok=True)
+    save_report(results, failures, path="reports/ragas_report.json")
+    save_report(results, failures, path="ragas_report.json")
     return results
 
 

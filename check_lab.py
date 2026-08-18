@@ -10,6 +10,11 @@ import os
 import sys
 import subprocess
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 
 def check_file(path: str, required: bool = True) -> bool:
     if os.path.exists(path):
@@ -53,6 +58,7 @@ def check_todos() -> int:
 
 def run_tests() -> tuple[int, int]:
     """Run pytest and return (passed, total)."""
+    import re
     try:
         result = subprocess.run(
             [sys.executable, "-m", "pytest", "tests/", "-v", "--tb=no", "-q"],
@@ -60,15 +66,15 @@ def run_tests() -> tuple[int, int]:
         )
         lines = result.stdout.strip().split("\n")
         summary = lines[-1] if lines else ""
-        # Parse "X passed, Y failed" or "X passed"
         passed = total = 0
-        for part in summary.split(","):
-            part = part.strip()
-            if "passed" in part:
-                passed = int(part.split()[0])
-                total += passed
-            if "failed" in part:
-                total += int(part.split()[0])
+        p_match = re.search(r'(\d+)\s+passed', summary)
+        if p_match:
+            passed = int(p_match.group(1))
+            total += passed
+        f_match = re.search(r'(\d+)\s+failed', summary)
+        if f_match:
+            failed = int(f_match.group(1))
+            total += failed
         return passed, total
     except Exception as e:
         print(f"  ⚠️  pytest error: {e}")
